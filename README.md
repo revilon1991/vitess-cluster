@@ -1,4 +1,4 @@
-## Consul Cluster
+## Vitess Cluster
 
 ### Introduction
 This repo is an experiment how works sharding via [Vitess](https://vitess.io).
