@@ -1,0 +1,7 @@
+{
+  "tables": {
+    "User": {},
+    "Device": {},
+    "RequestLog": {}
+  }
+}

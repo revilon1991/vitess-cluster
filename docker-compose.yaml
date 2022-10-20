@@ -1,0 +1,176 @@
+services:
+    app:
+        container_name: app
+        hostname: app
+        image: php:8.1
+        tty: true
+        working_dir: /app
+        volumes:
+            - ./:/app
+        depends_on:
+            - topology
+            - vtctl
+            - node1
+            - node2
+            - node3
+            - node4
+            - vtgate
+            - vtadmin
+
+    topology:
+        container_name: topology
+        hostname: topology
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/topology-up.sh
+        volumes:
+            - ./:/app
+        ports:
+            - 2379
+
+    vtctl:
+        container_name: vtctl
+        hostname: vtctl
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/vtctl-up.sh
+        volumes:
+            - ./:/app
+        ports:
+            - 15000
+            - 15999
+        depends_on:
+            - topology
+
+    node1:
+        container_name: node1
+        hostname: node1
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node1-up.sh
+        security_opt:
+            - seccomp:unconfined
+        volumes:
+            - ./:/app
+        depends_on:
+            - topology
+            - vtctl
+            - vtgate
+
+    node2:
+        container_name: node2
+        hostname: node2
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node2-up.sh
+        security_opt:
+            - seccomp:unconfined
+        volumes:
+            - ./:/app
+        depends_on:
+            - topology
+            - vtctl
+
+    node3:
+        container_name: node3
+        hostname: node3
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node3-up.sh
+        security_opt:
+            - seccomp:unconfined
+        volumes:
+            - ./:/app
+        depends_on:
+            - topology
+            - vtctl
+
+    node4:
+        container_name: node4
+        hostname: node4
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node4-up.sh
+        security_opt:
+            - seccomp:unconfined
+        volumes:
+            - ./:/app
+        depends_on:
+            - topology
+            - vtctl
+
+    vtgate:
+        container_name: vtgate
+        hostname: vtgate
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/vtgate-up.sh
+        volumes:
+            - ./:/app
+        ports:
+            - 15001:15001
+            - 15306:15306
+            - 15991:15991
+        depends_on:
+            - topology
+            - vtctl
+
+    vtadmin:
+        container_name: vtadmin
+        hostname: vtadmin
+        image: vitess-test:latest
+        build:
+            context: ./docker/db
+            dockerfile: ./Dockerfile
+        tty: true
+        working_dir: /app
+        environment:
+            INITIAL_SCRIPT_NAME: /app/scripts/vtadmin-up.sh
+        volumes:
+            - ./:/app
+        ports:
+            - 14200:14200
+            - 14201:14201
+        depends_on:
+            - topology
+            - vtctl
+            - node1
+            - node2
+            - node3
+            - node4
+            - vtgate

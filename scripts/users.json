@@ -1,0 +1,14 @@
+{
+  "root": [
+    {
+      "UserData": "root",
+      "MysqlNativePassword": "*81F5E21E35407D884A6CD4A731AEBFB6AF209E1B"
+    }
+  ],
+  "admin": [
+    {
+      "UserData": "admin",
+      "Password": "admin"
+    }
+  ]
+}

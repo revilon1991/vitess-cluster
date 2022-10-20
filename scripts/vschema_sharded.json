@@ -1,0 +1,26 @@
+{
+  "sharded": true,
+  "vindexes": {
+    "hash": {
+      "type": "hash"
+    }
+  },
+  "tables": {
+    "User": {
+      "column_vindexes": [
+        {
+          "column": "id",
+          "name": "hash"
+        }
+      ]
+    },
+    "Device": {
+      "column_vindexes": [
+        {
+          "column": "userId",
+          "name": "hash"
+        }
+      ]
+    }
+  }
+}
