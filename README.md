@@ -3,6 +3,7 @@
 ### Introduction
 This repo is an experiment how works sharding via [Vitess](https://vitess.io).
 Vitess is an application on GoLang which resolves problems if your MySQL becomes very big.
+For example, it can help do MySQL sharding.
 So, imagine that we have 3 tables of MySQL and 2 of them are massive.
 Once we consider that to separate our 2 tables between other servers is good idea.
 And now you can practice here before you're going to shard your production database.   
