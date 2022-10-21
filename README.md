@@ -112,7 +112,7 @@ Let's see how it works from simple PHP application.
 ```shell
 docker-compose exec app bash
 docker-php-ext-install pdo_mysql
-php app/index.php
+php /app/index.php
 ```
 
 There just connection to database (VTGate) and one query with join on all tables.
