@@ -9,8 +9,8 @@ Once we consider that to separate our 2 tables between other servers is good ide
 And now you can practice here before you're going to shard your production database.   
 
 Here you can see how communicate containers between each other.
-![This is an image](https://vitess.io/docs/14.0/overview/img/architecture.svg)
-_Picture from [Vitess architecture](https://vitess.io/docs/14.0/overview/architecture/)_
+![This is an image](https://vitess.io/docs/19.0/overview/img/architecture.svg)
+_Picture from [Vitess architecture](https://vitess.io/docs/19.0/overview/architecture/)_
 
 So we have 9 containers that it works.
 
