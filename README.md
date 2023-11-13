@@ -10,6 +10,7 @@ And now you can practice here before you're going to shard your production datab
 
 Here you can see how communicate containers between each other.
 ![This is an image](https://vitess.io/docs/19.0/overview/img/architecture.svg)
+
 _Picture from [Vitess architecture](https://vitess.io/docs/19.0/overview/architecture/)_
 
 So we have 9 containers that it works.
