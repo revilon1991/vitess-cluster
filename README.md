@@ -16,18 +16,18 @@ _Picture from [Vitess architecture](https://vitess.io/docs/17.0/overview/archite
 
 So we have 9 containers that it works.
 
-| № | Container                                                                            | Description                                                    |
-|---|--------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| 1 | `app` (Application)                                                                  | PHP Application which make queries to Vitess.                  |
-| 2 | [topology](https://vitess.io/docs/17.0/concepts/topology-service/)                   | Helps to communicate whole parts of system between each other. |
-| 3 | [vtctl](https://vitess.io/docs/17.0/concepts/vtctl/)  (vtctl + vtctld)               | CLI and API service to admin a Vitess cluster.                 |
-| 4 | [unsharded-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)    | Serve unsharded data.                                          |
-| 5 | [transitional-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL) | Assist in transferring data to the sharded space.              |
-| 6 | [left-shard-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)   | First shard with data.                                         |
-| 7 | [right-shard-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)  | Second shard with data.                                        |
-| 8 | [vtgate](https://vitess.io/docs/17.0/concepts/vtgate/)                               | Serve SQL queries.                                             |
-| 9 | [vtadmin](https://vitess.io/docs/17.0/reference/programs/vtadmin-web/)               | GUI.                                                           |
-| 9 | [vtorc](https://vitess.io/docs/17.0/user-guides/configuration-basic/vtorc/)          | Automated fault detection and repair tool.                     |
+| №  | Container                                                                            | Description                                                    |
+|----|--------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| 1  | `app` (Application)                                                                  | PHP Application which make queries to Vitess.                  |
+| 2  | [topology](https://vitess.io/docs/17.0/concepts/topology-service/)                   | Helps to communicate whole parts of system between each other. |
+| 3  | [vtctl](https://vitess.io/docs/17.0/concepts/vtctl/)  (vtctl + vtctld)               | CLI and API service to admin a Vitess cluster.                 |
+| 4  | [unsharded-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)    | Serve unsharded data.                                          |
+| 5  | [transitional-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL) | Assist in transferring data to the sharded space.              |
+| 6  | [left-shard-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)   | First shard with data.                                         |
+| 7  | [right-shard-node](https://vitess.io/docs/17.0/concepts/tablet/) (VTTablet + MySQL)  | Second shard with data.                                        |
+| 8  | [vtgate](https://vitess.io/docs/17.0/concepts/vtgate/)                               | Serve SQL queries.                                             |
+| 9  | [vtadmin](https://vitess.io/docs/17.0/reference/programs/vtadmin-web/)               | GUI.                                                           |
+| 10 | [vtorc](https://vitess.io/docs/17.0/user-guides/configuration-basic/vtorc/)          | Automated fault detection and repair tool.                     |
 
 > Each node has three MySQL and VTTablet instances: primary, replica, replica with semi sync replication.
 
