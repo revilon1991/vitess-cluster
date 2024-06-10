@@ -1,0 +1,21 @@
+[Unit]
+Description=Zookeeper Daemon
+Documentation=http://zookeeper.apache.org
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=/var/lib/zookeeper/env
+WorkingDirectory=/var/lib/zookeeper
+User=zookeeper
+Group=zookeeper
+ExecStart=/usr/share/zookeeper/bin/zkServer.sh start /etc/alternatives/zookeeper-conf/zoo.cfg
+ExecStop=/usr/share/zookeeper/bin/zkServer.sh stop /etc/alternatives/zookeeper-conf/zoo.cfg
+ExecReload=/usr/share/zookeeper/bin/zkServer.sh restart /etc/alternatives/zookeeper-conf/zoo.cfg
+TimeoutSec=30
+SuccessExitStatus=143
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

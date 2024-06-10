@@ -1,0 +1,57 @@
+[Unit]
+Description=VtTablet 203
+Requires=vtmysql-17203.service network.target
+After=vtmysql-17203.service network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Waiting for MySQL is completely up
+ExecStartPre=/bin/sh -c 'until mysqladmin -s -S /vt/vt_0000000203/mysql.sock ping; do sleep 0.1; done'
+
+ExecStart=/usr/local/bin/vttablet \
+    --topo_implementation zk2 \
+    --topo_global_server_address topology:2181 \
+    --topo_global_root /vitess/global \
+    --log_dir=/var/log/vitess/somecell-203 \
+    --keep_logs_by_mtime=604800s \
+    --tablet-path=somecell-203 \
+    --init_keyspace=sharded \
+    --init_shard=0 \
+    --init_tablet_type=replica \
+    --port=15203 \
+    --grpc_port=16203 \
+    --service_map 'grpc-queryservice,grpc-tabletmanager' \
+    --enable_replication_reporter=true \
+    --queryserver-config-pool-size=100 \
+    --queryserver-config-transaction-cap=500 \
+    --queryserver-config-query-cache-memory=3355443200 \
+    --queryserver-config-transaction-timeout=3600s \
+    --queryserver-config-query-timeout=3600s \
+    --queryserver-config-max-result-size=50000000 \
+    --queryserver-config-stream-pool-size=16 \
+    --grpc_max_message_size=3221225472 \
+    --backup_storage_implementation=file \
+    --file_backup_storage_root=/home/vitess/backups \
+    --backup_engine_implementation=xtrabackup \
+    --xtrabackup_stream_mode=xbstream \
+    --xtrabackup_user=vt_dba \
+    --unhealthy_threshold=6h
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

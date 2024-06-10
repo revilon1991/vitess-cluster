@@ -1,0 +1,26 @@
+[Unit]
+Description=Init VtMySQL
+Requires=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 101 --mysql_port 17101 --log_dir /var/log/vitess/somecell-101 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 101 --mysql_port 17101 --log_dir /var/log/vitess/somecell-101 shutdown
+
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 102 --mysql_port 17102 --log_dir /var/log/vitess/somecell-102 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 102 --mysql_port 17102 --log_dir /var/log/vitess/somecell-102 shutdown
+
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 103 --mysql_port 17103 --log_dir /var/log/vitess/somecell-103 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/usr/local/bin/mysqlctl --tablet_uid 103 --mysql_port 17103 --log_dir /var/log/vitess/somecell-103 shutdown
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

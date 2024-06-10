@@ -1,0 +1,38 @@
+[Unit]
+Description=Move Tables
+Requires=vttablet-201.service vttablet-202.service vttablet-203.service network.target
+After=vttablet-201.service vttablet-202.service vttablet-203.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Assign primary and replicas to move in serving state
+ExecStart=/home/vitess/assign_primary_replica.sh
+
+# Start replication tables from unsharded to sharded keyspace
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 MoveTables -- --source unsharded --tables 'Device,User' Create sharded.unsharded2sharded
+
+# Waiting for the replication goes from "Copying" to "Running" state
+ExecStart=/bin/sh -c 'until /usr/local/bin/vtctlclient --server vtctl:15999 MoveTables -- Progress sharded.unsharded2sharded | grep -qw Running; do sleep 0.1; done'
+
+# Switch readonly trafic from unsharded keyspace to sharded keyspace for replicating tables
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 MoveTables -- --tablet_types=replica SwitchTraffic sharded.unsharded2sharded
+
+# Switch writing trafic from unsharded keyspace to sharded keyspace for replicating tables
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 MoveTables -- --tablet_types=primary SwitchTraffic sharded.unsharded2sharded
+
+# Remove workflow to complete process
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 MoveTables Complete sharded.unsharded2sharded
+
+# Routing rules allow queries regardless of the specified database
+ExecStart=/usr/local/bin/vtctldclient --server vtctl:15999 ApplyRoutingRules --rules-file /home/vitess/routing_rules.json
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

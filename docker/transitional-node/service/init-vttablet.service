@@ -1,0 +1,20 @@
+[Unit]
+Description=Init VtTablet
+Requires=vttablet-201.service vttablet-202.service vttablet-203.service network.target
+After=vttablet-201.service vttablet-202.service vttablet-203.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Assign primary and replicas to move in serving state
+ExecStart=/home/vitess/assign_primary_replica.sh
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,26 @@
+[Unit]
+Description=VtAdmin Web
+Requires=vtadmin-api.service network.target
+After=vtadmin-api.service network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+ExecStart=/home/vitess/web/vtadmin/node_modules/.bin/serve --no-clipboard -l 14201 -s /home/vitess/web/vtadmin/build
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

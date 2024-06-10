@@ -1,0 +1,37 @@
+[Unit]
+Description=VtOrc
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+ExecStart=/usr/local/bin/vtorc \
+    --topo_implementation zk2 \
+    --topo_global_server_address topology:2181 \
+    --topo_global_root /vitess/global \
+    --topo-information-refresh-duration 30s \
+    --port 16000 \
+    --log_dir /var/log/vitess/vtorc-logs \
+    --recovery-period-block-duration 10m \
+    --instance-poll-time 5s \
+    --reasonable-replication-lag 600s \
+    --audit-file-location /var/log/vitess/vtorc-logs/audit.log \
+    --clusters_to_watch sharded,unsharded
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

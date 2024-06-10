@@ -1,0 +1,28 @@
+[Unit]
+Description=MySQL 17301
+Requires=init-vtmysql.service network.target
+After=init-vtmysql.service network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+ExecStart=/usr/local/bin/mysqlctl --mysqlctl_mycnf_template /vt/vt_0000000301/my.cnf --tablet_uid 301 --mysql_port 17301 --log_dir /var/log/vitess/somecell-301 start
+ExecStop=/usr/local/bin/mysqlctl --log_dir /var/log/vitess --tablet_uid 301 --mysql_port 17301 --log_dir /var/log/vitess/somecell-301 shutdown
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

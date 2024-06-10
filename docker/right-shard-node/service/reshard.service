@@ -1,0 +1,35 @@
+[Unit]
+Description=Reshard
+Requires=init-vttablet.service network.target
+After=init-vttablet.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Apply sharded VSchema
+ExecStart=/usr/local/bin/vtctldclient --server vtctl:15999 ApplyVSchema --vschema-file /home/vitess/vschema_sharded.json sharded
+
+# Start replication tables from transitional node to sharded nodes
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 Reshard -- --source_shards 0 --target_shards -80,80- Create sharded.transitional2shards
+
+# Waiting for the replication goes from "Copying" to "Running" state
+ExecStart=/bin/sh -c 'until /usr/local/bin/vtctlclient --server vtctl:15999 Reshard -- Progress sharded.transitional2shards | grep -qw Running; do sleep 0.1; done'
+
+# Switch readonly trafic from transitional node to sharded nodes
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 Reshard -- --tablet_types=replica SwitchTraffic sharded.transitional2shards
+
+# Switch writing trafic from transitional node to sharded nodes
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 Reshard -- --tablet_types=primary SwitchTraffic sharded.transitional2shards
+
+# Remove workflow to complete process
+ExecStart=/usr/local/bin/vtctlclient --server vtctl:15999 Reshard Complete sharded.transitional2shards
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

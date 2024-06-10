@@ -1,0 +1,36 @@
+[Unit]
+Description=VtAdmin
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+ExecStart=/usr/local/bin/vtadmin \
+            --addr ":14200" \
+            --http-origin "http://localhost:14201" \
+            --http-tablet-url-tmpl "http://{{ .Tablet.Hostname }}:15{{ .Tablet.Alias.Uid }}" \
+            --tracer "opentracing-jaeger" \
+            --grpc-tracing \
+            --http-tracing \
+            --log_dir /var/log/vitess \
+            --rbac \
+            --rbac-config="/home/vitess/rbac.yaml" \
+            --cluster "id=local,name=local,discovery=staticfile,discovery-staticfile-path=/home/vitess/discovery.json,tablet-fqdn-tmpl=http://{{ .Tablet.Hostname }}:15{{ .Tablet.Alias.Uid }}"
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,37 @@
+[Unit]
+Description=Vtctld
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+ExecStart=/usr/local/bin/vtctld \
+    --topo_implementation zk2 \
+    --topo_global_server_address topology:2181 \
+    --topo_global_root /vitess/global \
+    --cell somecell \
+    --log_dir /var/log/vitess \
+    --port 15000 \
+    --grpc_port 15999 \
+    --service_map 'grpc-vtctl,grpc-vtctld' \
+    --backup_storage_implementation file \
+    --file_backup_storage_root /home/vitess/backups
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

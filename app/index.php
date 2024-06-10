@@ -1,11 +1,5 @@
 <?php
 
-if (!extension_loaded('pdo_mysql')) {
-    $message = 'Extension pdo_mysql was not loaded, make you sure that you run: docker-php-ext-install pdo_mysql';
-
-    throw new RuntimeException($message);
-}
-
 $dsn = 'mysql:host=vtgate;port=15306';
 $user = 'admin';
 $password = 'admin';

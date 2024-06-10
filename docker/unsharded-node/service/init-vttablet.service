@@ -1,0 +1,26 @@
+[Unit]
+Description=Init VtTablet
+Requires=vttablet-101.service vttablet-102.service vttablet-103.service network.target
+After=vttablet-101.service vttablet-102.service vttablet-103.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Assign primary and replicas to move in serving state
+ExecStart=/home/vitess/assign_primary_replica.sh
+
+# Create DB schema
+ExecStart=/usr/local/bin/vtctldclient --server vtctl:15999 ApplySchema --sql-file /home/vitess/schema.sql unsharded
+
+# Apply unsharded VSchema
+ExecStart=/usr/local/bin/vtctldclient --server vtctl:15999 ApplyVSchema --vschema-file /home/vitess/vschema.json unsharded
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

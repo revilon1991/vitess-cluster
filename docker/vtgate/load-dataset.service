@@ -1,0 +1,23 @@
+[Unit]
+Description=Load Dataset
+Requires=vtgate.service network.target
+After=vtgate.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+# Waiting for mysql is completely up
+ExecStart=/bin/sh -c 'until nc -z 127.0.0.1 15306; do sleep 0.1; done'
+
+# Load dataset
+ExecStart=/bin/sh -c '/usr/bin/mysql -h127.0.0.1 -P15306 -uroot -proot < /home/vitess/dataset.sql'
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target

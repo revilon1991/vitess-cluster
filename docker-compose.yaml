@@ -2,175 +2,283 @@ services:
     app:
         container_name: app
         hostname: app
-        image: php:8.1
+        build:
+            context: ./
+            dockerfile: ./docker/app/Dockerfile
         tty: true
         working_dir: /app
         volumes:
-            - ./:/app
+            - ./app/:/app
         depends_on:
-            - topology
-            - vtctl
-            - node1
-            - node2
-            - node3
-            - node4
-            - vtgate
-            - vtadmin
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+            transitional-node:
+                condition: service_healthy
+            left-shard-node:
+                condition: service_healthy
+            right-shard-node:
+                condition: service_healthy
 
     topology:
         container_name: topology
         hostname: topology
-        image: vitess-test:latest
+        privileged: true
         build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: topology-image
         tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/topology-up.sh
-        volumes:
-            - ./:/app
         ports:
-            - 2379
+            - 2181
+        healthcheck:
+            test: /usr/share/zookeeper/bin/zkCli.sh get /zookeeper
+            interval: 5s
+            timeout: 120s
+            retries: 20
 
     vtctl:
         container_name: vtctl
         hostname: vtctl
-        image: vitess-test:latest
+        privileged: true
         build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: vtctl-image
         tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/vtctl-up.sh
-        volumes:
-            - ./:/app
         ports:
             - 15000
             - 15999
+        healthcheck:
+            test: >
+                /usr/local/bin/vtctldclient --server localhost:15999 GetKeyspace unsharded ||
+                /usr/local/bin/vtctldclient --server localhost:15999 GetKeyspace sharded
+            interval: 5s
+            timeout: 120s
+            retries: 20
         depends_on:
-            - topology
+            topology:
+                condition: service_healthy
 
-    node1:
-        container_name: node1
-        hostname: node1
-        image: vitess-test:latest
+    unsharded-node:
+        container_name: unsharded-node
+        hostname: unsharded-node
+        privileged: true
         build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: unsharded-node-image
+            args:
+                TABLET_PRIMARY_UID: 101
+                TABLET_REPLICA1_UID: 102
+                TABLET_REPLICA2_UID: 103
         tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node1-up.sh
-        security_opt:
-            - seccomp:unconfined
-        volumes:
-            - ./:/app
+        ports:
+            - "15101:15101"
+            - "15102:15102"
+            - "15103:15103"
+        healthcheck:
+            test: >
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "primary unsharded-node:15101" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica unsharded-node:15102" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica unsharded-node:15103"
+            interval: 5s
+            timeout: 120s
+            retries: 20
         depends_on:
-            - topology
-            - vtctl
-            - vtgate
-
-    node2:
-        container_name: node2
-        hostname: node2
-        image: vitess-test:latest
-        build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
-        tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node2-up.sh
-        security_opt:
-            - seccomp:unconfined
-        volumes:
-            - ./:/app
-        depends_on:
-            - topology
-            - vtctl
-
-    node3:
-        container_name: node3
-        hostname: node3
-        image: vitess-test:latest
-        build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
-        tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node3-up.sh
-        security_opt:
-            - seccomp:unconfined
-        volumes:
-            - ./:/app
-        depends_on:
-            - topology
-            - vtctl
-
-    node4:
-        container_name: node4
-        hostname: node4
-        image: vitess-test:latest
-        build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
-        tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/node/reshard/node4-up.sh
-        security_opt:
-            - seccomp:unconfined
-        volumes:
-            - ./:/app
-        depends_on:
-            - topology
-            - vtctl
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
 
     vtgate:
         container_name: vtgate
         hostname: vtgate
-        image: vitess-test:latest
+        privileged: true
         build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: vtgate-image
         tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/vtgate-up.sh
-        volumes:
-            - ./:/app
         ports:
-            - 15001:15001
-            - 15306:15306
-            - 15991:15991
+            - "15306:15306"
+            - "15001"
+            - "15991"
+        healthcheck:
+            test: >
+                /usr/bin/mysql -hvtgate -P15306 -uroot -proot unsharded:0 -e "select 1 from Device limit 1" --silent --skip-column-names | grep -qw 1 ||
+                /usr/bin/mysql -hvtgate -P15306 -uroot -proot unsharded:0 -e "select 1 from User limit 1" --silent --skip-column-names | grep -qw 1
+            interval: 5s
+            timeout: 120s
+            retries: 20
         depends_on:
-            - topology
-            - vtctl
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
 
     vtadmin:
         container_name: vtadmin
         hostname: vtadmin
-        image: vitess-test:latest
+        privileged: true
         build:
-            context: ./docker/db
-            dockerfile: ./Dockerfile
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: vtadmin-image
         tty: true
-        working_dir: /app
-        environment:
-            INITIAL_SCRIPT_NAME: /app/scripts/vtadmin-up.sh
-        volumes:
-            - ./:/app
         ports:
             - 14200:14200
             - 14201:14201
         depends_on:
-            - topology
-            - vtctl
-            - node1
-            - node2
-            - node3
-            - node4
-            - vtgate
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+
+    transitional-node:
+        container_name: transitional-node
+        hostname: transitional-node
+        privileged: true
+        build:
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: transitional-node-image
+            args:
+                TABLET_PRIMARY_UID: 201
+                TABLET_REPLICA1_UID: 202
+                TABLET_REPLICA2_UID: 203
+        tty: true
+        ports:
+            - "15201:15201"
+            - "15202:15202"
+            - "15203:15203"
+        healthcheck:
+            test: >
+                /usr/bin/mysql -hvtgate -P15306 -uroot -proot sharded:0 -e "select 1 from Device limit 1" --silent --skip-column-names | grep -qw 1 ||
+                /usr/bin/mysql -hvtgate -P15306 -uroot -proot sharded:0 -e "select 1 from User limit 1" --silent --skip-column-names | grep -qw 1 ||
+                /usr/local/bin/vtctlclient --server vtctl:15999 MoveTables -- Progress sharded.unsharded2shardeda 2>/dev/null | grep -qw "sharded.unsharded2sharded does not exist"
+            interval: 5s
+            timeout: 120s
+            retries: 20
+        depends_on:
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+
+
+    left-shard-node:
+        container_name: left-shard-node
+        hostname: left-shard-node
+        privileged: true
+        build:
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: left-shard-node-image
+            args:
+                TABLET_PRIMARY_UID: 301
+                TABLET_REPLICA1_UID: 302
+                TABLET_REPLICA2_UID: 303
+        tty: true
+        ports:
+            - "15301:15301"
+            - "15302:15302"
+            - "15303:15303"
+        healthcheck:
+            test: >
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "primary left-shard-node:15301" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica left-shard-node:15302" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica left-shard-node:15303"
+            interval: 5s
+            timeout: 180s
+            retries: 30
+        depends_on:
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+            transitional-node:
+                condition: service_healthy
+
+    right-shard-node:
+        container_name: right-shard-node
+        hostname: right-shard-node
+        privileged: true
+        build:
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: right-shard-node-image
+            args:
+                TABLET_PRIMARY_UID: 401
+                TABLET_REPLICA1_UID: 402
+                TABLET_REPLICA2_UID: 403
+        tty: true
+        ports:
+            - "15401:15401"
+            - "15402:15402"
+            - "15403:15403"
+        healthcheck:
+            test: >
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "primary right-shard-node:15401" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica right-shard-node:15402" ||
+                /usr/local/bin/vtctldclient --server vtctl:15999 GetTablets --action_timeout 10s | grep -qw "replica right-shard-node:15403"
+            interval: 5s
+            timeout: 180s
+            retries: 30
+        depends_on:
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+            transitional-node:
+                condition: service_healthy
+            left-shard-node:
+                condition: service_healthy
+
+    vtorc:
+        container_name: vtorc
+        hostname: vtorc
+        privileged: true
+        build:
+            context: ./
+            dockerfile: ./docker/Dockerfile
+            target: vtorc-image
+        tty: true
+        ports:
+            - "16000:16000"
+        depends_on:
+            vtctl:
+                condition: service_healthy
+            topology:
+                condition: service_healthy
+            unsharded-node:
+                condition: service_healthy
+            vtgate:
+                condition: service_healthy
+            transitional-node:
+                condition: service_healthy
+            left-shard-node:
+                condition: service_healthy
+            right-shard-node:
+                condition: service_healthy

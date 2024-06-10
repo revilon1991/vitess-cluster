@@ -1,0 +1,46 @@
+[Unit]
+Description=VtGate
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+ExecStart=/usr/local/bin/vtgate \
+    --topo_implementation zk2 \
+    --topo_global_server_address topology:2181 \
+    --topo_global_root /vitess/global \
+    --log_dir /var/log/vitess \
+    --log_queries_to_file /var/log/vitess/queries.log \
+    --port 15001 \
+    --grpc_port 15991 \
+    --mysql_server_port 15306 \
+    --cell somecell \
+    --cells_to_watch somecell \
+    --tablet_types_to_wait PRIMARY,REPLICA \
+    --service_map 'grpc-vtgateservice' \
+    --allowed_tablet_types PRIMARY,REPLICA \
+    --mysql_auth_server_impl=static \
+    --mysql_auth_server_static_file=/home/vitess/users.json \
+    --mysql_auth_static_reload_interval=60s \
+    --grpc_max_message_size 5368709120 \
+    --gate_query_cache_memory 33554432000 \
+    --max_memory_rows 50000000
+
+TimeoutSec=30
+Restart=on-failure
+RestartSec=1500ms
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutSec=120
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+LimitNOFILE=400000
+LimitNPROC=20000
+
+[Install]
+WantedBy=multi-user.target

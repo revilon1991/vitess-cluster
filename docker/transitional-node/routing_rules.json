@@ -1,0 +1,58 @@
+{
+    "rules": [
+        {
+            "from_table": "RequestLog",
+            "to_tables": [
+                "unsharded.RequestLog"
+            ]
+        },
+        {
+            "from_table": "unsharded.RequestLog",
+            "to_tables": [
+                "unsharded.RequestLog"
+            ]
+        },
+        {
+            "from_table": "sharded.RequestLog",
+            "to_tables": [
+                "unsharded.RequestLog"
+            ]
+        },
+        {
+            "from_table": "User",
+            "to_tables": [
+                "sharded.User"
+            ]
+        },
+        {
+            "from_table": "unsharded.User",
+            "to_tables": [
+                "sharded.User"
+            ]
+        },
+        {
+            "from_table": "sharded.User",
+            "to_tables": [
+                "sharded.User"
+            ]
+        },
+        {
+            "from_table": "Device",
+            "to_tables": [
+                "sharded.Device"
+            ]
+        },
+        {
+            "from_table": "unsharded.Device",
+            "to_tables": [
+                "sharded.Device"
+            ]
+        },
+        {
+            "from_table": "sharded.Device",
+            "to_tables": [
+                "sharded.Device"
+            ]
+        }
+    ]
+}

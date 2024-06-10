@@ -1,0 +1,21 @@
+[Unit]
+Description=Init Keyspace
+Requires=vtctld.service network.target
+After=vtctld.service network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/vitess/
+User=vitess
+Group=vitess
+
+ExecStart=/home/vitess/add_cellinfo.sh
+ExecStart=/home/vitess/create_keyspace.sh
+ExecStart=/home/vitess/set_durability_policy.sh
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=Vitess
+
+[Install]
+WantedBy=multi-user.target
