@@ -33,6 +33,13 @@ So we have 9 containers that it works.
 
 System requirements:
 * [Docker](https://www.docker.com)
+* Minimal resource allocation
+  * CPU 2
+  * RAM 8GB
+
+##### This is an example of resource utilization while the app container does query every 0.0001s single thread
+![Resource Allocation](./resource_allocation.png)
+
 
 Let's install our cluster!
 
