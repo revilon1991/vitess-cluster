@@ -10,12 +10,15 @@ User=vitess
 Group=vitess
 
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 301 --mysql_port 17301 --log_dir /var/log/vitess/somecell-301 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/bin/sh -c 'until mysqladmin -s -S /vt/vt_0000000301/mysql.sock ping; do sleep 1; done'
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 301 --mysql_port 17301 --log_dir /var/log/vitess/somecell-301 shutdown
 
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 302 --mysql_port 17302 --log_dir /var/log/vitess/somecell-302 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/bin/sh -c 'until mysqladmin -s -S /vt/vt_0000000302/mysql.sock ping; do sleep 1; done'
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 302 --mysql_port 17302 --log_dir /var/log/vitess/somecell-302 shutdown
 
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 303 --mysql_port 17303 --log_dir /var/log/vitess/somecell-303 init -- --init_db_sql_file=/home/vitess/vitess.sql
+ExecStart=/bin/sh -c 'until mysqladmin -s -S /vt/vt_0000000303/mysql.sock ping; do sleep 1; done'
 ExecStart=/usr/local/bin/mysqlctl --tablet_uid 303 --mysql_port 17303 --log_dir /var/log/vitess/somecell-303 shutdown
 
 StandardOutput=journal
