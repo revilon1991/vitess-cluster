@@ -33,7 +33,20 @@ STOPSIGNAL SIGRTMIN+3
 # Inform Docker that the container wants to run in an init system
 LABEL "exec.systemd"="true"
 
-FROM vitess/lite:v17.0.6 as binaries-image
+FROM golang:1.22 as binaries-image
+
+RUN apt update && apt install -y wget build-essential git
+
+ENV VITESS_VERSION='17.0.6'
+
+RUN mkdir -p /vt && wget -P /vt https://github.com/vitessio/vitess/archive/refs/tags/v${VITESS_VERSION}.tar.gz
+RUN tar -xzvf /vt/v${VITESS_VERSION}.tar.gz -C /vt/ vitess-${VITESS_VERSION} && rm -fr /vt/v${VITESS_VERSION}.tar.gz
+RUN mv /vt/vitess-${VITESS_VERSION} /vt/vitess
+RUN cd /vt/vitess/ && git init
+
+WORKDIR /vt/vitess/
+ENV VT_EXTRA_BUILD_FLAGS='-buildvcs=false'
+RUN make
 
 FROM base-image as topology-image
 
@@ -51,8 +64,8 @@ RUN adduser --disabled-password --gecos "" vitess
 RUN mkdir /var/log/vitess && chown vitess:vitess /var/log/vitess
 RUN touch /home/vitess/vtconfig.yaml
 
-COPY --from=binaries-image /vt/bin/vtctldclient /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctld /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctldclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctld /usr/local/bin/
 
 COPY ./docker/vtctl/add_cellinfo.sh /home/vitess/
 COPY ./docker/vtctl/create_keyspace.sh /home/vitess/
@@ -94,9 +107,9 @@ RUN sed -i "s/{{tablet_uid}}/${TABLET_REPLICA2_UID}/g" /vt/vt_0000000${TABLET_RE
 
 RUN chmod -R 750 /vt && chown -R vitess:vitess /vt
 
-COPY --from=binaries-image /vt/bin/mysqlctl /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vttablet /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctldclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/mysqlctl /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vttablet /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctldclient /usr/local/bin/
 
 COPY ./docker/vitess.sql /home/vitess/
 COPY ./docker/unsharded-node/schema.sql /home/vitess/
@@ -157,10 +170,10 @@ RUN sed -i "s/{{tablet_uid}}/${TABLET_REPLICA2_UID}/g" /vt/vt_0000000${TABLET_RE
 
 RUN chmod -R 750 /vt && chown -R vitess:vitess /vt
 
-COPY --from=binaries-image /vt/bin/mysqlctl /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vttablet /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctldclient /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctlclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/mysqlctl /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vttablet /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctldclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctlclient /usr/local/bin/
 
 COPY ./docker/vitess.sql /home/vitess/
 COPY ./docker/transitional-node/assign_primary_replica.sh /home/vitess/
@@ -200,7 +213,7 @@ RUN adduser --disabled-password --gecos "" vitess
 RUN mkdir /var/log/vitess && chown vitess:vitess /var/log/vitess
 RUN touch /home/vitess/vtconfig.yaml
 
-COPY --from=binaries-image /vt/bin/vtgate /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtgate /usr/local/bin/
 
 COPY ./docker/vtgate/users.json /home/vitess/
 COPY ./docker/vtgate/dataset.sql /home/vitess/
@@ -223,7 +236,7 @@ RUN adduser --disabled-password --gecos "" vitess
 RUN mkdir /var/log/vitess && chown vitess:vitess /var/log/vitess
 RUN touch /home/vitess/vtconfig.yaml
 
-COPY --from=binaries-image /vt/bin/vtadmin /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtadmin /usr/local/bin/
 
 COPY ./docker/vtadmin/discovery.json /home/vitess/
 COPY ./docker/vtadmin/rbac.yaml /home/vitess/
@@ -272,9 +285,9 @@ RUN sed -i "s/{{tablet_uid}}/${TABLET_REPLICA2_UID}/g" /vt/vt_0000000${TABLET_RE
 
 RUN chmod -R 750 /vt && chown -R vitess:vitess /vt
 
-COPY --from=binaries-image /vt/bin/mysqlctl /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vttablet /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctldclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/mysqlctl /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vttablet /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctldclient /usr/local/bin/
 
 COPY ./docker/vitess.sql /home/vitess/
 COPY ./docker/left-shard-node/assign_primary_replica.sh /home/vitess/
@@ -333,10 +346,10 @@ RUN sed -i "s/{{tablet_uid}}/${TABLET_REPLICA2_UID}/g" /vt/vt_0000000${TABLET_RE
 
 RUN chmod -R 750 /vt && chown -R vitess:vitess /vt
 
-COPY --from=binaries-image /vt/bin/mysqlctl /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vttablet /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctldclient /usr/local/bin/
-COPY --from=binaries-image /vt/bin/vtctlclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/mysqlctl /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vttablet /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctldclient /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtctlclient /usr/local/bin/
 
 COPY ./docker/vitess.sql /home/vitess/
 COPY ./docker/right-shard-node/assign_primary_replica.sh /home/vitess/
@@ -376,7 +389,7 @@ RUN mkdir -p /var/log/vitess/vtorc-logs
 RUN chown -R vitess:vitess /var/log/vitess
 RUN touch /home/vitess/vtconfig.yaml
 
-COPY --from=binaries-image /vt/bin/vtorc /usr/local/bin/
+COPY --from=binaries-image /vt/vitess/bin/vtorc /usr/local/bin/
 
 COPY ./docker/vtorc/vtorc.service /etc/systemd/system/
 
